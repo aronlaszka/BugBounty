@@ -1,13 +1,21 @@
 import re
 import copy
+import logging
+from queue import Queue, Empty
+from threading import Thread
 from neo4j.v1 import GraphDatabase
 
 
 class Neo4jDriver:
 
     def __init__(self):
-        self.driver = GraphDatabase.driver(uri='bolt://localhost:7687',
-                              auth=('neo4j', '1'))
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(threadName)s -'
+                                                       ' %(name)s - %(levelname)s - %(message)s')
+
+        self.log = logging.getLogger(__name__)
+        self.queue = Queue()
+        self.log.info('running neo4jbatchinsert...')
+        Neo4jBatchInsert(self.queue).start()
 
     def store_tweet(self, otweet):
 
@@ -23,9 +31,10 @@ class Neo4jDriver:
         del tweet.place  # TODO add these three
         del tweet.coordinates
         del tweet.geo
+        del tweet.scopes
 
-        self.run_query('MERGE (t:Tweet { id: %d }) SET t += %s RETURN t'
-                  % (tweet.id, str(tweet)))
+        self.queue_query('MERGE (t:Tweet { id: %d }) SET t += %s RETURN t'
+                         % (tweet.id, str(tweet)))
 
         self.store_user(otweet.user)
         self.tweeted(tweet.id, otweet.user.id)
@@ -48,47 +57,73 @@ class Neo4jDriver:
             self.quote(tweet.id, otweet.quoted_status.id)
 
     def mention(self, tweet_id, user):
-        self.run_query('MERGE (u:User { id: %d }) MERGE (t:Tweet { id: %d }) MERGE (t)-[r:Mention]->(u) SET u += %s'
-                  % (user.id, tweet_id, str(user)))
+        self.queue_query('MERGE (u:User { id: %d }) MERGE (t:Tweet { id: %d }) MERGE (t)-[r:Mention]->(u) SET u += %s'
+                         % (user.id, tweet_id, str(user)))
 
     def tag(self, tweet_id, text):
-        self.run_query('MERGE (t:Tweet { id: %d }) MERGE (tag:Tag { text: "%s" }) MERGE (t)-[r:TaggedWith]->(tag)'
-                  % (tweet_id, text.lower()))
+        self.queue_query('MERGE (t:Tweet { id: %d }) MERGE (tag:Tag { text: "%s" }) MERGE (t)-[r:TaggedWith]->(tag)'
+                         % (tweet_id, text.lower()))
 
     def include(self, tweet_id, url):
-        self.run_query('MERGE (t:Tweet { id: %d }) MERGE (u:Url { link: "%s" }) MERGE (t)-[r:Has]->(u)'
-                  % (tweet_id, url.lower()))
+        self.queue_query('MERGE (t:Tweet { id: %d }) MERGE (u:Url { link: "%s" }) MERGE (t)-[r:Has]->(u)'
+                         % (tweet_id, url.lower()))
 
     def retweet(self, tweet_id, orig_id):
-        self.run_query('MERGE (t:Tweet { id: %d }) MERGE (o:Tweet { id: %d }) MERGE (t)-[r:Retweet]->(o)'
-                  % (tweet_id, orig_id))
+        self.queue_query('MERGE (t:Tweet { id: %d }) MERGE (o:Tweet { id: %d }) MERGE (t)-[r:Retweet]->(o)'
+                         % (tweet_id, orig_id))
 
     def quote(self, tweet_id, quoted_id):
-        self.run_query('MERGE (t:Tweet { id: %d }) MERGE (o:Tweet { id: %d }) MERGE (t)-[r:Quoted]->(o)'
-                  % (tweet_id, quoted_id))
+        self.queue_query('MERGE (t:Tweet { id: %d }) MERGE (o:Tweet { id: %d }) MERGE (t)-[r:Quoted]->(o)'
+                         % (tweet_id, quoted_id))
 
     def tweeted(self, tweet_id, user_id):
-        self.run_query('MERGE (t:Tweet { id: %d }) MERGE (u:User { id: %d }) MERGE (u)-[r:Tweeted]->(t)'
-                  % (tweet_id, user_id))
+        self.queue_query('MERGE (t:Tweet { id: %d }) MERGE (u:User { id: %d }) MERGE (u)-[r:Tweeted]->(t)'
+                         % (tweet_id, user_id))
 
     def store_user(self, ouser):
         user = copy.deepcopy(ouser)
 
         del user.status
 
-        self.run_query('MERGE (u:User { id: %d }) SET u += %s' % (user.id, str(user)))
+        self.queue_query('MERGE (u:User { id: %d }) SET u += %s' % (user.id, str(user)))
 
     def following(self, user_o_id, user_f_id):
-        self.run_query('MERGE (o:User {id: %d}) MERGE (f:User {id: %d}) MERGE (o)-[r:Following]-(f)')
+        self.queue_query('MERGE (o:User {id: %d}) MERGE (f:User {id: %d}) MERGE (o)-[r:Following]-(f)'
+                         % (user_o_id, user_f_id))
 
     def mark_user_completed(self, user_id):
-        self.run_query('MATCH (u:User {id: %d}) SET u.completed = true' % user_id)
+        self.queue_query('MATCH (u:User {id: %d}) SET u.completed = true' % user_id)
 
-    def run_query(self, query):
-        with self.driver.session() as session:
-            return session.write_transaction(self.execute, re.sub(r'(?<!: )(?<!\\)"(\S*?)"', '\\1', query))
+    def queue_query(self, query):
+        self.queue.put(re.sub(r'(?<!: )(?<!\\)"(\S*?)"', '\\1', query))
+
+
+class Neo4jBatchInsert(Thread):
+    def __init__(self, queue, uri='bolt://localhost:7687', username='neo4j', password='1'):
+        super().__init__()
+        self.daemon = True
+        self.log = logging.getLogger(__name__)
+        self.driver = GraphDatabase.driver(uri=uri,
+                                           auth=(username, password))
+
+        self.log.info('Connected to Neo4j at ' + uri)
+        self.queue = queue
+
+        self.log.info('Neo4j queue now running...')
+
+    def run(self):
+        while True:
+            self.log.info('queries in queue: ' + str(self.queue.qsize()))
+            with self.driver.session() as session:
+                tx = session.begin_transaction()
+                try:
+                    for i in range(1, 10 * 1000):
+                        self.execute(tx, self.queue.get(timeout=8))
+                except Empty:
+                    self.log.info('no new query in last 8 seconds. commiting.')
+                tx.commit()
 
     @staticmethod
     def execute(tx, query):
         result = tx.run(query)
-        return result.single()
+        return result
