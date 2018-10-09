@@ -88,11 +88,14 @@ class Neo4jDriver:
         self.queue_query('MERGE (u:User { id: %d }) SET u += %s' % (user.id, str(user)))
 
     def following(self, user_o_id, user_f_id):
-        self.queue_query('MERGE (o:User {id: %d}) MERGE (f:User {id: %d}) MERGE (o)-[r:Following]-(f)'
+        self.queue_query('MERGE (o:User { id: %d }) MERGE (f:User {id: %d}) MERGE (o)-[r:Following]-(f)'
                          % (user_o_id, user_f_id))
 
+    def mark_user_important(self, user_id):
+        self.queue_query('MERGE (i:User { id: %d }) SET n :ImportantUser' % user_id)
+
     def mark_user_completed(self, user_id):
-        self.queue_query('MATCH (u:User {id: %d}) SET u.completed = true' % user_id)
+        self.queue_query('MATCH (u:User { id: %d }) SET u.completed = true' % user_id)
 
     def queue_query(self, query):
         self.queue.put(re.sub(r'(?<!: )(?<!\\)"(\S*?)"', '\\1', query))
@@ -117,10 +120,10 @@ class Neo4jBatchInsert(Thread):
             with self.driver.session() as session:
                 tx = session.begin_transaction()
                 try:
-                    for i in range(1, 10 * 1000):
+                    for i in range(1, 1 * 1000):
                         self.execute(tx, self.queue.get(timeout=8))
                 except Empty:
-                    self.log.info('no new query in last 8 seconds. commiting.')
+                    self.log.debug('no new query in last 8 seconds. commiting.')
                 tx.commit()
 
     @staticmethod

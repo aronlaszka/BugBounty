@@ -26,7 +26,7 @@ class TwitterDriver:
         while True:
             if self.delay > 1:
                 self.log.info('delay: ' + str(self.delay))
-            time.sleep(self.delay)
+            time.sleep(self.delay - 1)
             try:
                 fl = self.api.GetFriendsPaged(user_id=user_id, count=20, cursor=cursor)
                 self.log.debug(len(fl[2]))
@@ -59,7 +59,7 @@ class TwitterDriver:
         while True:
             if self.delay > 1:
                 self.log.info('delay: ' + str(self.delay))
-            time.sleep(self.delay)
+            time.sleep(self.delay - 1)
             try:
                 timeline = self.api.GetUserTimeline(user_id=user_id, count=200, max_id=None if last == -1 else last)
                 if len(timeline) == 0:
@@ -84,4 +84,5 @@ class TwitterDriver:
         self.log.info(str(len(candidates)) + ' candidates found.')
         for status in candidates:
             nj.store_tweet(status)
+            nj.mark_user_important(status.user.id)
         return candidates

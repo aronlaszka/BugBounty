@@ -32,5 +32,4 @@ if __name__ == '__main__':
         main()
         # print(random.Random().random())
     except KeyboardInterrupt:
-
         exit(-1)
