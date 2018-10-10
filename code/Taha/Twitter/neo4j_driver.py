@@ -5,17 +5,23 @@ from queue import Queue, Empty
 from threading import Thread
 from neo4j.v1 import GraphDatabase
 
+class Neo4jWrapper:
 
-class Neo4jDriver:
-
-    def __init__(self):
+    def __init__(self, uri='bolt://localhost:7687', username='neo4j', password='1'):
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(threadName)s -'
                                                        ' %(name)s - %(levelname)s - %(message)s')
 
         self.log = logging.getLogger(__name__)
         self.queue = Queue()
+        self.driver = GraphDatabase.driver(uri=uri,
+                                           auth=(username, password))
+
+        self.log = logging.getLogger(__name__)
+
+        self.log.info('Connected to Neo4j at ' + uri)
+
         self.log.info('running neo4jbatchinsert...')
-        Neo4jBatchInsert(self.queue).start()
+        Neo4jBatchInsert(self.queue, self.driver).start()
 
     def store_tweet(self, otweet):
 
@@ -92,24 +98,30 @@ class Neo4jDriver:
                          % (user_o_id, user_f_id))
 
     def mark_user_important(self, user_id):
-        self.queue_query('MERGE (i:User { id: %d }) SET n :ImportantUser' % user_id)
+        self.queue_query('MERGE (u:User { id: %d }) SET u :ImportantUser' % user_id)
 
     def mark_user_completed(self, user_id):
-        self.queue_query('MATCH (u:User { id: %d }) SET u.completed = true' % user_id)
+        self.queue_query('MATCH (u:User { id: %d }) SET u :CompletedUser' % user_id)
+
+    def is_completed(self, user_id):
+        with self.driver.session() as session:
+            try:
+                if 'CompletedUser' in session.run('MATCH (n:User { id: %d }) RETURN LABELS(n)' % user_id).single()[0]:
+                    return True
+                return False
+            except:
+                return False
 
     def queue_query(self, query):
         self.queue.put(re.sub(r'(?<!: )(?<!\\)"(\S*?)"', '\\1', query))
 
 
 class Neo4jBatchInsert(Thread):
-    def __init__(self, queue, uri='bolt://localhost:7687', username='neo4j', password='1'):
+    def __init__(self, queue, driver):
         super().__init__()
         self.daemon = True
         self.log = logging.getLogger(__name__)
-        self.driver = GraphDatabase.driver(uri=uri,
-                                           auth=(username, password))
-
-        self.log.info('Connected to Neo4j at ' + uri)
+        self.driver = driver
         self.queue = queue
 
         self.log.info('Neo4j queue now running...')

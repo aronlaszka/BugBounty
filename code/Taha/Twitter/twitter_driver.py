@@ -2,9 +2,9 @@ import twitter
 import logging
 import time
 from twitter.error import TwitterError
-from neo4j_driver import Neo4jDriver
+from neo4j_driver import Neo4jWrapper
 
-nj = Neo4jDriver()
+nj = Neo4jWrapper()
 
 
 class TwitterDriver:
