@@ -2,14 +2,11 @@ import twitter
 import logging
 import time
 from twitter.error import TwitterError
-from neo4j_driver import Neo4jWrapper
-
-nj = Neo4jWrapper()
 
 
 class TwitterDriver:
 
-    def __init__(self):
+    def __init__(self, nj):
         self.api = twitter.Api(consumer_key='C64LEG4kait1EUTtZZ5ku5atD',
                                consumer_secret='y15FYcKGFUC8w7bDAkGiK50g0DONTRH3DgQb6FxfM82CZkRXEH',
                                access_token_key='833314858586296322-Syne61sXWTQ2Y5U9wfc9ZlpDcHSIpxd',
@@ -18,6 +15,7 @@ class TwitterDriver:
                                                        ' %(name)s - %(levelname)s - %(message)s')
         self.log = logging.getLogger(__name__)
         self.delay = 32
+        self.nj = nj
 
     def get_user_friends(self, user_id):
         self.log.info('getting user friends ' + str(user_id))
@@ -35,8 +33,8 @@ class TwitterDriver:
                 cursor = fl[0]
 
                 for user in fl[2]:
-                    nj.store_user(user)
-                    nj.following(user_id, user.id)
+                    self.nj.store_user(user)
+                    self.nj.following(user_id, user.id)
 
                 if self.delay > 1:
                     self.delay = int(self.delay / 2)
@@ -50,7 +48,7 @@ class TwitterDriver:
     def get_user(self, user_id):
         self.log.info('getting user ' + str(user_id))
         user = self.api.GetUser(user_id)
-        nj.store_user(user)
+        self.nj.store_user(user)
         return user
 
     def get_tweets(self, user_id):
@@ -67,7 +65,7 @@ class TwitterDriver:
                 last = timeline[-1].id
 
                 for status in timeline:
-                    nj.store_tweet(status)
+                    self.nj.store_tweet(status)
 
                 if self.delay > 1:
                     self.delay = int(self.delay / 2)
@@ -83,6 +81,6 @@ class TwitterDriver:
         candidates = self.api.GetSearch(term=keyword, count=100)
         self.log.info(str(len(candidates)) + ' candidates found.')
         for status in candidates:
-            nj.store_tweet(status)
-            nj.mark_user_important(status.user.id)
+            self.nj.store_tweet(status)
+            self.nj.mark_user_important(status.user.id)
         return candidates

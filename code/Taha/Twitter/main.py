@@ -3,8 +3,8 @@ from neo4j_driver import Neo4jWrapper
 import logging
 import random
 
-td = TwitterDriver()
 nj = Neo4jWrapper()
+td = TwitterDriver(nj)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(threadName)s - %(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)

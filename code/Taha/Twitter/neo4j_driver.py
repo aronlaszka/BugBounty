@@ -128,7 +128,7 @@ class Neo4jBatchInsert(Thread):
 
     def run(self):
         while True:
-            self.log.info('queries in queue: ' + str(self.queue.qsize()))
+            # self.log.info('queries in queue: ' + str(self.queue.qsize()))
             with self.driver.session() as session:
                 tx = session.begin_transaction()
                 try:
