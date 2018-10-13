@@ -18,6 +18,7 @@ def main():
             crawl_user(status.user.id)
         else:
             log.info('user %d is already crawled')
+    # print(nj.bugbounty_ratio(795470076))
 
 
 def crawl_user(user_id):

@@ -5,6 +5,7 @@ from queue import Queue, Empty
 from threading import Thread
 from neo4j.v1 import GraphDatabase
 
+
 class Neo4jWrapper:
 
     def __init__(self, uri='bolt://localhost:7687', username='neo4j', password='1'):
@@ -106,11 +107,34 @@ class Neo4jWrapper:
     def is_completed(self, user_id):
         with self.driver.session() as session:
             try:
-                if 'CompletedUser' in session.run('MATCH (n:User { id: %d }) RETURN LABELS(n)' % user_id).single()[0]:
+                if 'CompletedUser' in session.run('MATCH (n:User { id: %d }) RETURN LABELS(n)'
+                                                               % user_id).single()[0]:
                     return True
                 return False
             except:
                 return False
+
+    def bugbounty_ratio(self, user_id):
+        with self.driver.session() as session:
+            bugbounty_count = 0
+            total_count = 0
+            results = session.run('MATCH (u:User {id: %d})-[:Tweeted]-(t) RETURN t.text' % user_id)
+            for record in results:
+                total_count += 1
+                if self.is_bugbounty(record['t.text']):
+                    bugbounty_count += 1
+            print(bugbounty_count)
+            print(total_count)
+            return float(bugbounty_count) / total_count
+
+
+    @staticmethod
+    def is_bugbounty(tweet):
+        bugbounty_words = ['bugbounty', 'bugbountytip', 'togetherwehitharder']
+        for word in bugbounty_words:
+            if word in tweet.lower():
+                return True
+        return False
 
     def queue_query(self, query):
         self.queue.put(re.sub(r'(?<!: )(?<!\\)"(\S*?)"', '\\1', query))
