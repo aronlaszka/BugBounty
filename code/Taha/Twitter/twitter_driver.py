@@ -10,10 +10,14 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(threadName)s -'
 class TwitterDriver:
 
     def __init__(self, nj):
-        self.api = twitter.Api(consumer_key='C64LEG4kait1EUTtZZ5ku5atD',
-                               consumer_secret='y15FYcKGFUC8w7bDAkGiK50g0DONTRH3DgQb6FxfM82CZkRXEH',
-                               access_token_key='833314858586296322-Syne61sXWTQ2Y5U9wfc9ZlpDcHSIpxd',
-                               access_token_secret='CYXvRL4DMQFXjQebQwvQqrpPXZVesy3VNjL9vWThRCsIA')
+        # self.api = twitter.Api(consumer_key='C64LEG4kait1EUTtZZ5ku5atD',
+        #                        consumer_secret='y15FYcKGFUC8w7bDAkGiK50g0DONTRH3DgQb6FxfM82CZkRXEH',
+        #                        access_token_key='833314858586296322-Syne61sXWTQ2Y5U9wfc9ZlpDcHSIpxd',
+        #                        access_token_secret='CYXvRL4DMQFXjQebQwvQqrpPXZVesy3VNjL9vWThRCsIA')
+        self.api = twitter.Api(consumer_key='pTn8CmSu4DWds42sgriqMTh3D',
+                               consumer_secret='PpDLb3oNdiL3WgjnFhgwryQXt4CkehTIJRsh04YRaxvmC6GI5z',
+                               access_token_key='1051519670837288965-huNoFYASIRcqZltvR6SM38Tq8o7yRh',
+                               access_token_secret='hiq6uVunvOuTbMFG4i7PgtG32SZTRPUMZxjGw7SIEDsHl')
         self.log = logging.getLogger(__name__)
         self.delay = 32
         self.nj = nj

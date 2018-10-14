@@ -3,7 +3,9 @@ import copy
 import logging
 from queue import Queue, Empty
 from threading import Thread
+from threading import Event
 from neo4j.v1 import GraphDatabase
+import time
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(threadName)s -'
                                                        ' %(name)s - %(levelname)s - %(message)s')
@@ -25,7 +27,7 @@ class Neo4jWrapper:
         self.runner = Neo4jBatchInsert(self.queue, self.driver)
         self.runner.start()
 
-    def __del__(self):
+    def end(self):
         self.log.info('finishing neo4j queue...')
         self.runner.end()
         self.runner.join()
@@ -149,30 +151,29 @@ class Neo4jWrapper:
 class Neo4jBatchInsert(Thread):
     def __init__(self, queue, driver):
         super().__init__()
-        self.daemon = True
         self.log = logging.getLogger(__name__)
         self.driver = driver
         self.queue = queue
 
         self.log.info('Neo4j queue now running...')
-        self.finished = False
+        self.finished = Event()
 
     def end(self):
-        self.finished = True
+        self.finished.set()
 
     def run(self):
-        while True:
-            with self.driver.session() as session:
+        with self.driver.session() as session:
+            while True:
                 tx = session.begin_transaction()
                 try:
                     for i in range(1, 500):
                         tx.run(self.queue.get(timeout=10))
                 except Empty:
-                    if self.finished:
+                    if self.finished.isSet():
                         self.log.info('finishing...')
                         break
                     else:
                         self.log.info('no new query after 10 seconds')
                 finally:
                     tx.commit()
-                    self.log.info('after commit')
+                    self.log.info('commit')
