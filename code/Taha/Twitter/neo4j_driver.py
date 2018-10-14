@@ -5,13 +5,13 @@ from queue import Queue, Empty
 from threading import Thread
 from neo4j.v1 import GraphDatabase
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(threadName)s -'
+                                                       ' %(name)s - %(levelname)s - %(message)s')
+
 
 class Neo4jWrapper:
 
     def __init__(self, uri='bolt://localhost:7687', username='neo4j', password='1'):
-        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(threadName)s -'
-                                                       ' %(name)s - %(levelname)s - %(message)s')
-
         self.log = logging.getLogger(__name__)
         self.queue = Queue()
         self.driver = GraphDatabase.driver(uri=uri,
@@ -22,7 +22,13 @@ class Neo4jWrapper:
         self.log.info('Connected to Neo4j at ' + uri)
 
         self.log.info('running neo4jbatchinsert...')
-        Neo4jBatchInsert(self.queue, self.driver).start()
+        self.runner = Neo4jBatchInsert(self.queue, self.driver)
+        self.runner.start()
+
+    def __del__(self):
+        self.log.info('finishing neo4j queue...')
+        self.runner.end()
+        self.runner.join()
 
     def store_tweet(self, otweet):
 
@@ -149,20 +155,24 @@ class Neo4jBatchInsert(Thread):
         self.queue = queue
 
         self.log.info('Neo4j queue now running...')
+        self.finished = False
+
+    def end(self):
+        self.finished = True
 
     def run(self):
         while True:
-            # self.log.info('queries in queue: ' + str(self.queue.qsize()))
             with self.driver.session() as session:
                 tx = session.begin_transaction()
                 try:
-                    for i in range(1, 1 * 1000):
-                        self.execute(tx, self.queue.get(timeout=8))
+                    for i in range(1, 500):
+                        tx.run(self.queue.get(timeout=10))
                 except Empty:
-                    self.log.debug('no new query in last 8 seconds. commiting.')
-                tx.commit()
-
-    @staticmethod
-    def execute(tx, query):
-        result = tx.run(query)
-        return result
+                    if self.finished:
+                        self.log.info('finishing...')
+                        break
+                    else:
+                        self.log.info('no new query after 10 seconds')
+                finally:
+                    tx.commit()
+                    self.log.info('after commit')

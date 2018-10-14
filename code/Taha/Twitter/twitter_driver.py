@@ -3,6 +3,9 @@ import logging
 import time
 from twitter.error import TwitterError
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(threadName)s -'
+                                                       ' %(name)s - %(levelname)s - %(message)s')
+
 
 class TwitterDriver:
 
@@ -11,8 +14,6 @@ class TwitterDriver:
                                consumer_secret='y15FYcKGFUC8w7bDAkGiK50g0DONTRH3DgQb6FxfM82CZkRXEH',
                                access_token_key='833314858586296322-Syne61sXWTQ2Y5U9wfc9ZlpDcHSIpxd',
                                access_token_secret='CYXvRL4DMQFXjQebQwvQqrpPXZVesy3VNjL9vWThRCsIA')
-        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(threadName)s -'
-                                                       ' %(name)s - %(levelname)s - %(message)s')
         self.log = logging.getLogger(__name__)
         self.delay = 32
         self.nj = nj
@@ -49,11 +50,13 @@ class TwitterDriver:
         self.log.info('getting user ' + str(user_id))
         user = self.api.GetUser(user_id)
         self.nj.store_user(user)
+        self.log.info('user ' + str(user_id) + ' is ' + user.screen_name)
         return user
 
     def get_tweets(self, user_id):
         self.log.info('getting user tweets ' + str(user_id))
         last = -1
+        count = 0
         while True:
             if self.delay > 1:
                 self.log.info('delay: ' + str(self.delay))
@@ -66,6 +69,7 @@ class TwitterDriver:
 
                 for status in timeline:
                     self.nj.store_tweet(status)
+                    count += 1
 
                 if self.delay > 1:
                     self.delay = int(self.delay / 2)
@@ -73,6 +77,7 @@ class TwitterDriver:
             except TwitterError as e:
                 self.log.error(e)
                 self.delay += 2
+                print('total retreived: ' + str(count))
                 self.log.info('waiting for rate limit window...' + str(self.delay))
         self.log.info('collected tweets for ' + str(user_id))
 
