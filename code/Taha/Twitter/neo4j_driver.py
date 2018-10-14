@@ -47,6 +47,7 @@ class Neo4jWrapper:
         del tweet.coordinates
         del tweet.geo
         del tweet.scopes
+        del tweet.withheld_in_countries
 
         self.queue_query('MERGE (t:Tweet { id: %d }) SET t += %s RETURN t'
                          % (tweet.id, str(tweet)))
@@ -106,16 +107,13 @@ class Neo4jWrapper:
         self.queue_query('MERGE (o:User { id: %d }) MERGE (f:User {id: %d}) MERGE (o)-[r:Following]-(f)'
                          % (user_o_id, user_f_id))
 
-    def mark_user_important(self, user_id):
-        self.queue_query('MERGE (u:User { id: %d }) SET u :ImportantUser' % user_id)
+    def mark_user_something(self, user_id, what):
+        self.queue_query('MATCH (u:User { id: %d }) SET u :%s' % (user_id, what))
 
-    def mark_user_completed(self, user_id):
-        self.queue_query('MATCH (u:User { id: %d }) SET u :CompletedUser' % user_id)
-
-    def is_completed(self, user_id):
+    def is_user_something(self, user_id, what):
         with self.driver.session() as session:
             try:
-                if 'CompletedUser' in session.run('MATCH (n:User { id: %d }) RETURN LABELS(n)'
+                if what in session.run('MATCH (n:User { id: %d }) RETURN LABELS(n)'
                                                                % user_id).single()[0]:
                     return True
                 return False
@@ -131,8 +129,6 @@ class Neo4jWrapper:
                 total_count += 1
                 if self.is_bugbounty(record['t.text']):
                     bugbounty_count += 1
-            print(bugbounty_count)
-            print(total_count)
             return float(bugbounty_count) / total_count
 
 
@@ -166,7 +162,7 @@ class Neo4jBatchInsert(Thread):
             while True:
                 tx = session.begin_transaction()
                 try:
-                    for i in range(1, 500):
+                    for i in range(1, 1000):
                         tx.run(self.queue.get(timeout=10))
                 except Empty:
                     if self.finished.isSet():

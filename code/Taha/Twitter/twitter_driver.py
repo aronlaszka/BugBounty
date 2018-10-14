@@ -60,28 +60,33 @@ class TwitterDriver:
     def get_tweets(self, user_id):
         self.log.info('getting user tweets ' + str(user_id))
         last = -1
-        count = 0
+        req_count = 0
         while True:
             if self.delay > 1:
                 self.log.info('delay: ' + str(self.delay))
             time.sleep(self.delay - 1)
             try:
                 timeline = self.api.GetUserTimeline(user_id=user_id, count=200, max_id=None if last == -1 else last)
+                req_count += 1
                 if len(timeline) == 0:
                     break
                 last = timeline[-1].id
 
                 for status in timeline:
                     self.nj.store_tweet(status)
-                    count += 1
 
                 if self.delay > 1:
                     self.delay = int(self.delay / 2)
 
+                bugbounty_ratio = self.nj.bugbounty_ratio(user_id)
+                if bugbounty_ratio < 0.03:
+                    self.log.info('user %d is not a bounty hunter. ratio: %f' % (user_id, bugbounty_ratio))
+                    self.nj.mark_user_something(user_id, 'Excluded')
+                    break
+
             except TwitterError as e:
                 self.log.error(e)
                 self.delay += 2
-                print('total retreived: ' + str(count))
                 self.log.info('waiting for rate limit window...' + str(self.delay))
         self.log.info('collected tweets for ' + str(user_id))
 
@@ -91,5 +96,4 @@ class TwitterDriver:
         self.log.info(str(len(candidates)) + ' candidates found.')
         for status in candidates:
             self.nj.store_tweet(status)
-            self.nj.mark_user_important(status.user.id)
         return candidates
