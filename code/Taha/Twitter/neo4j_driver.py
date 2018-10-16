@@ -108,7 +108,8 @@ class Neo4jWrapper:
                          % (user_o_id, user_f_id))
 
     def mark_user_something(self, user_id, what):
-        self.queue_query('MATCH (u:User { id: %d }) SET u :%s' % (user_id, what))
+        with self.driver.session() as session:
+            session.run('MATCH (u:User { id: %d }) SET u :%s' % (user_id, what))
 
     def is_user_something(self, user_id, what):
         with self.driver.session() as session:

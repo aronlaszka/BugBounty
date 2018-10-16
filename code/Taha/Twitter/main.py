@@ -17,7 +17,7 @@ def main():
                                                                                                   'Excluded'):
             crawl_user(status.user.id)
         else:
-            log.info('user %d is already crawled')
+            log.info('user %d is already crawled' % status.user.id)
     # print(nj.bugbounty_ratio(795470076))
     # print(nj.bugbounty_ratio(2433784736))
     # crawl_user(3094698976)
