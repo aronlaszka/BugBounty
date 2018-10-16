@@ -66,9 +66,9 @@ class TwitterDriver:
                 self.log.info('delay: ' + str(self.delay))
             time.sleep(self.delay - 1)
             try:
-                timeline = self.api.GetUserTimeline(user_id=user_id, count=200, max_id=None if last == -1 else last)
+                timeline = self.api.GetUserTimeline(user_id=user_id, count=200, max_id=None if last == -1 else last - 1)
                 req_count += 1
-                if len(timeline) == 0:
+                if len(timeline) == 0 or len(timeline) < 20:
                     break
                 last = timeline[-1].id
 

@@ -1,7 +1,6 @@
 from twitter_driver import TwitterDriver
 from neo4j_driver import Neo4jWrapper
 import logging
-import random
 
 nj = Neo4jWrapper()
 td = TwitterDriver(nj)
