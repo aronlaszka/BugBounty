@@ -15,7 +15,7 @@ class Neo4jWrapper:
 
     def __init__(self, uri='bolt://localhost:7687', username='neo4j', password='1'):
         self.log = logging.getLogger(__name__)
-        self.queue = Queue()
+        self.queue = Queue(maxsize=3000)
         self.driver = GraphDatabase.driver(uri=uri,
                                            auth=(username, password))
 
