@@ -15,7 +15,7 @@ class Neo4jWrapper:
 
     def __init__(self, uri='bolt://localhost:7687', username='neo4j', password='1'):
         self.log = logging.getLogger(__name__)
-        self.queue = Queue(maxsize=3000)
+        self.queue = Queue(maxsize=10 * 1000)
         self.driver = GraphDatabase.driver(uri=uri,
                                            auth=(username, password))
 
@@ -121,25 +121,11 @@ class Neo4jWrapper:
             except:
                 return False
 
-    def bugbounty_ratio(self, user_id):
+    def expansion_candidates(self, skip=0):
         with self.driver.session() as session:
-            bugbounty_count = 0
-            total_count = 0
-            results = session.run('MATCH (u:User {id: %d})-[:Tweeted]-(t) RETURN t.text' % user_id)
-            for record in results:
-                total_count += 1
-                if self.is_bugbounty(record['t.text']):
-                    bugbounty_count += 1
-            return float(bugbounty_count) / total_count
-
-
-    @staticmethod
-    def is_bugbounty(tweet):
-        bugbounty_words = ['bugbounty', 'bugbountytip', 'togetherwehitharder']
-        for word in bugbounty_words:
-            if word in tweet.lower():
-                return True
-        return False
+            return [record['u.id'] for record in session.run('match (u:User)-[r:Tweeted]-()'
+                                                             ' return u.screen_name, u.id, count(r)'
+                                                             ' order by count(r) desc skip %d' % skip)]
 
     def queue_query(self, query):
         self.queue.put(re.sub(r'(?<!: )(?<!\\)"(\S*?)"', '\\1', query))
@@ -161,9 +147,10 @@ class Neo4jBatchInsert(Thread):
     def run(self):
         with self.driver.session() as session:
             while True:
+                self.log.info('queue size is %d' % self.queue.qsize())
                 tx = session.begin_transaction()
                 try:
-                    for i in range(1, 1000):
+                    for i in range(0, 2 * 1000):
                         tx.run(self.queue.get(timeout=10))
                 except Empty:
                     if self.finished.isSet():
@@ -172,5 +159,6 @@ class Neo4jBatchInsert(Thread):
                     else:
                         self.log.info('no new query after 10 seconds')
                 finally:
+                    self.log.info('before commit...')
                     tx.commit()
                     self.log.info('commit')

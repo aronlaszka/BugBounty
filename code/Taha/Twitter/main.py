@@ -1,6 +1,7 @@
 from twitter_driver import TwitterDriver
 from neo4j_driver import Neo4jWrapper
 import logging
+import time
 
 nj = Neo4jWrapper()
 td = TwitterDriver(nj)
@@ -8,25 +9,13 @@ td = TwitterDriver(nj)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(threadName)s - %(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
 
-
 def main():
-    candidates = get_candidate_tweets('#bugbountytip')
-    candidates.sort(reverse=True, key=lambda tweet: tweet.favorite_count)
-    for status in candidates:
-        if not nj.is_user_something(status.user.id, 'CompletedUser') and not nj.is_user_something(status.user.id,
-                                                                                                  'Excluded'):
-            crawl_user(status.user.id)
-        else:
-            log.info('user %d is already crawled' % status.user.id)
-    # print(nj.bugbounty_ratio(795470076))
-    # print(nj.bugbounty_ratio(2433784736))
-    # crawl_user(3094698976)
-
-
-def crawl_user(user_id):
-    td.get_user(user_id)
-    td.get_tweets(user_id)
-    nj.mark_user_something(user_id, 'CompletedUser')
+    # candidates = get_candidate_tweets('#bugcrowd')
+    # candidates.sort(reverse=True, key=lambda tweet: tweet.favorite_count)
+    # for status in candidates:
+    #     td.crawl_user(status.user.id)
+    for user in nj.expansion_candidates(8):
+        td.crawl_user(user)
 
 
 def get_candidate_tweets(keyword):
@@ -38,6 +27,7 @@ def get_candidate_tweets(keyword):
 if __name__ == '__main__':
     try:
         main()
+        nj.end()
     except KeyboardInterrupt:
         nj.end()
         exit(-1)

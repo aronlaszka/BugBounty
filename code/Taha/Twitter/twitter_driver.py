@@ -40,6 +40,7 @@ class TwitterDriver:
                 for user in fl[2]:
                     self.nj.store_user(user)
                     self.nj.following(user_id, user.id)
+                    self.crawl_user(user.id)
 
                 if self.delay > 1:
                     self.delay = int(self.delay / 2)
@@ -78,8 +79,8 @@ class TwitterDriver:
                 if self.delay > 1:
                     self.delay = int(self.delay / 2)
 
-                bugbounty_ratio = self.nj.bugbounty_ratio(user_id)
-                if bugbounty_ratio < 0.03:
+                bugbounty_ratio = self.bugbounty_ratio([t.text for t in timeline])
+                if bugbounty_ratio < 0.01:
                     self.log.info('user %d is not a bounty hunter. ratio: %f' % (user_id, bugbounty_ratio))
                     self.nj.mark_user_something(user_id, 'Excluded')
                     break
@@ -97,3 +98,30 @@ class TwitterDriver:
         for status in candidates:
             self.nj.store_tweet(status)
         return candidates
+
+    def crawl_user(self, user_id):
+        if not self.nj.is_user_something(user_id, 'CompletedUser') and not self.nj.is_user_something(user_id, 'Excluded'):
+            self.get_user(user_id)
+            self.get_tweets(user_id)
+            self.nj.mark_user_something(user_id, 'CompletedUser')
+        else:
+            self.log.info('user %d is already crawled' % user_id)
+
+    def bugbounty_ratio(self, tweets):
+        bugbounty_count = 0
+        total_count = 0
+
+        for tweet in tweets:
+            total_count += 1
+            if self.is_bugbounty(tweet):
+                bugbounty_count += 1
+        return float(bugbounty_count) / total_count
+
+    @staticmethod
+    def is_bugbounty(tweet):
+        bugbounty_words = ['bugbounty', 'bugbountytip', 'togetherwehitharder', 'ittakesacrowd', 'hackerone',
+                           'bugbounties', 'bugcrowd']
+        for word in bugbounty_words:
+            if word in tweet.lower():
+                return True
+        return False
