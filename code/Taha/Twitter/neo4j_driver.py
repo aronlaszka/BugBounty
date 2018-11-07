@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(threadName)s -'
 class Neo4jWrapper:
 
     def __init__(self, uri='bolt://localhost:7687', username='neo4j', password='1'):
-        self.log = logging.getLogger(__name__)
+        self.log = logging
         self.queue = Queue(maxsize=10 * 1000)
         self.driver = GraphDatabase.driver(uri=uri,
                                            auth=(username, password))
@@ -127,6 +127,12 @@ class Neo4jWrapper:
                                                              ' return u.screen_name, u.id, count(r)'
                                                              ' order by count(r) desc skip %d' % skip)]
 
+    def expansion_candidate_by_mention(self, skip=0):
+        with self.driver.session() as session:
+            return [record['u.id'] for record in session.run('match (u:User)-[m:Mention]-()'
+                                                             ' return u.id, count(m)'
+                                                             ' order by count(m) desc skip %d' % skip)]
+
     def queue_query(self, query):
         self.queue.put(re.sub(r'(?<!: )(?<!\\)"(\S*?)"', '\\1', query))
 
@@ -134,7 +140,7 @@ class Neo4jWrapper:
 class Neo4jBatchInsert(Thread):
     def __init__(self, queue, driver):
         super().__init__()
-        self.log = logging.getLogger(__name__)
+        self.log = logging
         self.driver = driver
         self.queue = queue
 
