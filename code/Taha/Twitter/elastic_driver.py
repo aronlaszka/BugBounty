@@ -1,9 +1,11 @@
 from datetime import datetime
 from elasticsearch import Elasticsearch
+from exceptions import TweetAlreadyExistsException
 import json
 import logging
 import socket
 import time
+
 
 address = 'localhost'
 port = 5000
@@ -22,20 +24,19 @@ class ElasticDriver:
         pass
 
     def store_tweet(self, tweet):
-        try:
-            tweet_dic = json.loads(str(tweet))
-            tweet_dic['@timestamp'] = datetime.strptime(tweet.created_at, '%a %b %d %X %z %Y').isoformat()
-            # tweet_dic['_id'] = tweet_dic['id_str']
+        tweet_dic = json.loads(str(tweet))
+        tweet_dic['@timestamp'] = datetime.strptime(tweet.created_at, '%a %b %d %X %z %Y').isoformat()
+        # tweet_dic['_id'] = tweet_dic['id_str']
 
-            # del tweet.user_mentions
-            # del tweet.hashtags
-            # del tweet.urls
-            # del tweet.media  # not necessary
-            # del tweet.coordinates
+        # del tweet.user_mentions
+        # del tweet.hashtags
+        # del tweet.urls
+        # del tweet.media  # not necessary
+        # del tweet.coordinates
 
-            # self.sock.sendto(bytearray(json.dumps(tweet_dic), 'UTF-8'), (address, port))
+        # self.sock.sendto(bytearray(json.dumps(tweet_dic), 'UTF-8'), (address, port))
 
-            self.es.index(index='twitter', doc_type='tweet', body=json.dumps(tweet_dic), id=tweet.id)
-            # time.sleep(0.01)
-        except Exception as e:
-            logging.error(e)
+        res = self.es.index(index='twitter', doc_type='tweet', body=json.dumps(tweet_dic), id=tweet.id)
+
+        if res['result'] == 'updated':
+            raise TweetAlreadyExistsException()

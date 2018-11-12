@@ -1,0 +1,68 @@
+text:"bugbounty" or text:"bug bounty" or text:"togetherwehitharder" or text:"bugbountytip" or text:"ittakesacrowd" or text:"hackerone" or text:"bugcrowd" or entities.hashtags.text.keyword:"bugbounty" or entities.hashtags.text.keyword:"bug bounty" or entities.hashtags.text.keyword:"togetherwehitharder" or entities.hashtags.text.keyword:"bugbountytip" or entities.hashtags.text.keyword:"ittakesacrowd" or entities.hashtags.text.keyword:"hackerone" or entities.hashtags.text.keyword:"bugcrowd"
+
+{
+  "aggs": {
+    "2": {
+      "terms": {
+        "field": "user.screen_name.keyword",
+        "size": 1000,
+        "order": {
+          "_count": "asc"
+        }
+      }
+    }
+  },
+  "size": 0,
+  "_source": {
+    "excludes": []
+  },
+  "stored_fields": [
+    "*"
+  ],
+  "script_fields": {},
+  "docvalue_fields": [
+    {
+      "field": "@timestamp",
+      "format": "date_time"
+    },
+    {
+      "field": "created_at",
+      "format": "date_time"
+    },
+    {
+      "field": "retweeted_status.created_at",
+      "format": "date_time"
+    },
+    {
+      "field": "retweeted_status.user.created_at",
+      "format": "date_time"
+    },
+    {
+      "field": "user.created_at",
+      "format": "date_time"
+    }
+  ],
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "range": {
+            "@timestamp": {
+              "gte": 978328800000,
+              "lte": 1546322399999,
+              "format": "epoch_millis"
+            }
+          }
+        }
+      ],
+      "filter": [
+        {
+          "match_all": {}
+        }
+      ],
+      "should": [],
+      "must_not": []
+    }
+  }
+}
+
