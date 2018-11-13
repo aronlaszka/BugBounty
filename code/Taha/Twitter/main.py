@@ -31,7 +31,9 @@ def main():
     # Crawler(crawl_expand).start()
     # time.sleep(5)
     # Crawler(crawl_mention).start()
-    crawl_search()
+    # crawl_search()
+    for user in es.get_streamed_tweets():
+        td.crawl_user(user)
 
 def crawl_expand():
     for user in nj.expansion_candidates(15000):

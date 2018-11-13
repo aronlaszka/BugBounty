@@ -40,3 +40,6 @@ class ElasticDriver:
 
         if res['result'] == 'updated':
             raise TweetAlreadyExistsException()
+
+    def get_streamed_tweets(self):
+        return [tweet['_source']['user']['id'] for tweet in self.es.search(index='logstash*', q='*:*', size='10000')['hits']['hits']]

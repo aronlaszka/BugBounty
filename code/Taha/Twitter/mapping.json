@@ -29,7 +29,12 @@
             },
             "text": {
               "type": "keyword",
-              "normalizer": "simple_normalizer"
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             }
           }
         },
