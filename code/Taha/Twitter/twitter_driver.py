@@ -2,7 +2,7 @@ import twitter
 import logging
 import time
 from twitter.error import TwitterError
-from exceptions import TweetAlreadyExistsException
+from exceptions import UserAlreadyCrawledException
 
 
 class TwitterDriver:
@@ -89,33 +89,35 @@ class TwitterDriver:
                 try:
                     for status in timeline:
                         self.db.store_tweet(status)
-                except TweetAlreadyExistsException:
+                except UserAlreadyCrawledException:
                     break
 
             except TwitterError as e:
-                if e.message == 'Not authorized.':
-                    break
                 self.log.error(e)
-                self.delay += 2
-                self.log.info('waiting for rate limit window...' + str(self.delay))
+                if isinstance(e.message, list) and 'message' in e.message[0] and e.message[0]['message'] == 'Rate limit exceeded':
+                    self.delay += 2
+                    self.log.info('waiting for rate limit window...' + str(self.delay))
+                else:
+                    break
+
         self.log.info('collected tweets for ' + str(user_id))
 
     def search(self, keyword):
         self.log.info('searching for keyword: ' + keyword)
         candidates = self.api.GetSearch(term=keyword, count=100)
         self.log.info(str(len(candidates)) + ' candidates found.')
-        for status in candidates:
-            try:
-                self.db.store_tweet(status)
-            except:
-                pass
+        #for status in candidates:
+        #    try:
+        #        self.db.store_tweet(status)
+        #    except:
+        #        pass
         return candidates
 
     def crawl_user(self, user_id):
         # if not self.db.is_user_something(user_id, 'CompletedUser') and not self.db.is_user_something(user_id, 'Excluded'):
             self.get_user(user_id)
             self.get_tweets(user_id)
-            # self.db.mark_user_something(user_id, 'CompletedUser')
+            self.db.mark_user_something(user_id, 'CompletedUser')
         # else:
         #     self.log.info('user %d is already crawled' % user_id)
 

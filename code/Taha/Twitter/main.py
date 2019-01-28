@@ -6,7 +6,7 @@ import random
 import logging
 import time
 
-nj = Neo4jWrapper()
+# nj = Neo4jWrapper()
 es = ElasticDriver()
 td = TwitterDriver(es)
 td2 = TwitterDriver(es, consumer_key='pTn8CmSu4DWds42sgriqMTh3D',
@@ -28,21 +28,22 @@ class Crawler(Thread):
 
 def main():
 
-    # Crawler(crawl_expand).start()
-    # time.sleep(5)
-    # Crawler(crawl_mention).start()
-    # crawl_search()
-    for user in es.get_streamed_tweets():
-        td.crawl_user(user)
+     # Crawler(crawl_expand).start()
+     # time.sleep(5)
+     # Crawler(crawl_mention).start()
+     # crawl_search()
+     for user in es.get_streamed_tweets():
+         td.crawl_user(user)
+     #td.crawl_user(15447522)
+#
+# def crawl_expand():
+#     for user in nj.expansion_candidates(15000):
+#         td.crawl_user(user)
 
-def crawl_expand():
-    for user in nj.expansion_candidates(15000):
-        td.crawl_user(user)
 
-
-def crawl_mention():
-    for user in nj.expansion_candidate_by_mention(1000):
-        td2.crawl_user(user)
+# def crawl_mention():
+#     for user in nj.expansion_candidate_by_mention(1000):
+#         td2.crawl_user(user)
 
 
 def crawl_search():
@@ -68,8 +69,9 @@ def get_candidate_tweets(keyword):
 
 if __name__ == '__main__':
     try:
-        main()
-        nj.end()
+        # main()
+        # nj.end()
+        pass
     except KeyboardInterrupt:
-        nj.end()
+        # nj.end()
         exit(-1)
