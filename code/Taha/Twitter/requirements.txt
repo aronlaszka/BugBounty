@@ -1,14 +1,28 @@
+aiohttp==3.4.4
+async-timeout==3.0.1
+attrs==18.2.0
 certifi==2018.8.24
 chardet==3.0.4
+Click==7.0
+-e git+https://github.com/aronlaszka/BugBounty@157405b4aa53addb5f4806fd3cc5a786f513ad09#egg=crawler&subdirectory=code/Taha/Twitter
 elasticsearch==6.3.1
 future==0.16.0
 idna==2.7
+multidict==4.4.2
 neo4j-driver==1.6.2
 neotime==1.0.0
+numpy==1.15.4
 oauthlib==2.1.0
--e git+https://github.com/bear/python-twitter@96ccf1f7301f2ad95cbc632a95588ef81a156cd4#egg=twitter
+pandas==0.23.4
+python-dateutil==2.7.5
+-e git+https://github.com/bear/python-twitter@96ccf1f7301f2ad95cbc632a95588ef81a156cd4#egg=python_twitter
 pytz==2018.5
 requests==2.20.0
+requests-aws4auth==0.9
 requests-oauthlib==1.0.0
+scikit-learn==0.20.0
+scipy==1.1.0
 six==1.11.0
+sklearn==0.0
 urllib3==1.23
+yarl==1.2.6

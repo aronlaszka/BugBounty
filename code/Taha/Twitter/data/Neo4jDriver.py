@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(threadName)s -'
                                                        ' %(name)s - %(levelname)s - %(message)s')
 
 
-class Neo4jWrapper:
+class Neo4jDriver:
 
     def __init__(self, uri='bolt://localhost:7687', username='neo4j', password='1'):
         self.log = logging
