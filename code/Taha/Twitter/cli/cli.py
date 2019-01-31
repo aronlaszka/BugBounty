@@ -71,6 +71,7 @@ def start():
             td = TwitterDriver(
                 search['keywords'],
                 ed,
+                search['sensitivity'],
                 twitterAccount['consumer_key'],
                 twitterAccount['consumer_secret'],
                 twitterAccount['access_token_key'],

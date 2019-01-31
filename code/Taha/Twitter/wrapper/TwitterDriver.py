@@ -10,6 +10,7 @@ class TwitterDriver:
     def __init__(self,
                  keywords,
                  db,
+                 sensitivity,
                  consumer_key,
                  consumer_secret,
                  access_token_key,
@@ -21,6 +22,7 @@ class TwitterDriver:
                                access_token_secret=access_token_secret)
 
         self.keywords = keywords
+        self.sensitivity = sensitivity
         self.log = logging
         self.delay = 8
         self.db = db
@@ -54,7 +56,7 @@ class TwitterDriver:
                     self.delay = int(self.delay / 2)
 
                 relevancy_ratio = self.relevancy_ratio([t.text for t in timeline])
-                if relevancy_ratio < 0.05:
+                if relevancy_ratio < self.sensitivity:
                     self.log.info('user %d is not relevant. ratio: %f' % (user_id, relevancy_ratio))
                     break
 
@@ -66,7 +68,8 @@ class TwitterDriver:
 
             except TwitterError as e:
                 self.log.error(e)
-                if isinstance(e.message, list) and 'message' in e.message[0] and e.message[0]['message'] == 'Rate limit exceeded':
+                if isinstance(e.message, list) and 'message' in e.message[0] and e.message[0][
+                    'message'] == 'Rate limit exceeded':
                     self.delay += 2
                     self.log.info('waiting for rate limit window...' + str(self.delay))
                 else:
@@ -81,9 +84,9 @@ class TwitterDriver:
         return candidates
 
     def crawl_user(self, user_id):
-            self.get_user(user_id)
-            self.get_tweets(user_id)
-            self.db.mark_user_something(user_id, 'CompletedUser')
+        self.get_user(user_id)
+        self.get_tweets(user_id)
+        self.db.mark_user_something(user_id, 'CompletedUser')
 
     def relevancy_ratio(self, tweets):
         relevant_count = 0
