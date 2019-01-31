@@ -28,4 +28,5 @@ class Crawler(Thread):
         return search_res
 
     def run(self):
-        self.crawl_search()
+        while True:
+            self.crawl_search()

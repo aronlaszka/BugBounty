@@ -47,6 +47,7 @@ def create_es_connection(host, access_key, secret_key, region) -> Elasticsearch:
 
     return es
 
+
 @click.command(name='testDb')
 def testDb():
     create_es_connection(
@@ -109,6 +110,28 @@ def clean(index):
         config['database']['region'])).clean_index(index)
 
 
+@click.command(name='reindex')
+@click.argument('src')
+@click.argument('src_type')
+@click.argument('dst')
+@click.argument('dst_type')
+def reindex(src, src_type, dst, dst_type):
+    ElasticDriver(create_es_connection(
+        config['database']['host'],
+        config['database']['access_key'],
+        config['database']['secret_key'],
+        config['database']['region']), None).reindex({
+            'source': {
+                'index': src,
+                'type': src_type
+            },
+            'dest': {
+                'index': dst,
+                'type': dst_type
+            }
+    })
+
+
 @click.group(invoke_without_command=True)
 @click.pass_context
 def cli(ctx):
@@ -119,3 +142,4 @@ cli.add_command(clean)
 cli.add_command(testDb)
 cli.add_command(start)
 cli.add_command(create_indexes)
+cli.add_command(reindex)

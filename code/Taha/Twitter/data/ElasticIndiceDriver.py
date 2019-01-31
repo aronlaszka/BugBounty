@@ -14,7 +14,4 @@ class ElasticIndiceDriver:
 
     def clean_index(self, index: str):
         self.client.delete(index)
-        try:
-            self.client.delete(f'{index}-finished')
-        except:
-            pass
+        self.client.delete(f'{index}-finished')
