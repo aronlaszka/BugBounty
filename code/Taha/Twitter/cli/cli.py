@@ -67,6 +67,7 @@ def start():
     threads = []
     for search in config['searches']:
         ed = ElasticDriver(es, search['name'])
+        i = 1
         for twitterAccount in search['twitterAccounts']:
             td = TwitterDriver(
                 search['keywords'],
@@ -77,7 +78,9 @@ def start():
                 twitterAccount['access_token_key'],
                 twitterAccount['access_token_secret']
             )
-            threads.append(Crawler(search['keywords'], es, td))
+            threads.append(Crawler(f'{search["name"]}-{i}', search['keywords'], es, td))
+            i += 1
+
     for thread in threads:
         thread.start()
     for thread in threads:

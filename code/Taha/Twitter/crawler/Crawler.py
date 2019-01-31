@@ -4,11 +4,12 @@ import logging
 
 
 class Crawler(Thread):
-    def __init__(self, keywords, elastic, td):
+    def __init__(self, name, keywords, elastic, td):
         super().__init__()
         self.keywords = keywords
         self.es = elastic
         self.td = td
+        self.name = name
 
     def crawl_search(self):
         random.shuffle(self.keywords)
