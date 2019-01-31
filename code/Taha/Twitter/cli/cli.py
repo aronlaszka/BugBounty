@@ -7,7 +7,8 @@ from requests_aws4auth import AWS4Auth
 
 from crawler.Crawler import Crawler
 from data.ElasticDriver import ElasticDriver
-from wrapper.driver import TwitterDriver
+from wrapper.TwitterDriver import TwitterDriver
+from data.ElasticIndiceDriver import ElasticIndiceDriver
 
 # Configuring logger
 
@@ -46,17 +47,6 @@ def create_es_connection(host, access_key, secret_key, region) -> Elasticsearch:
 
     return es
 
-
-@click.command(name='clean')
-@click.argument('index')
-def clean(index):
-    ElasticDriver(create_es_connection(
-        config['database']['host'],
-        config['database']['access_key'],
-        config['database']['secret_key'],
-        config['database']['region']), index).clean()
-
-
 @click.command(name='testDb')
 def testDb():
     create_es_connection(
@@ -75,11 +65,11 @@ def start():
         config['database']['region'])
     threads = []
     for search in config['searches']:
-        es = ElasticDriver(es, search['name'])
+        ed = ElasticDriver(es, search['name'])
         for twitterAccount in search['twitterAccounts']:
             td = TwitterDriver(
                 search['keywords'],
-                es,
+                ed,
                 twitterAccount['consumer_key'],
                 twitterAccount['consumer_secret'],
                 twitterAccount['access_token_key'],
@@ -92,6 +82,33 @@ def start():
         thread.join()
 
 
+@click.command(name='create')
+def create_indexes():
+    es = create_es_connection(
+        config['database']['host'],
+        config['database']['access_key'],
+        config['database']['secret_key'],
+        config['database']['region'])
+    esi = ElasticIndiceDriver(es)
+    with open('mapping.json') as mapping_file:
+        mapping = json.load(mapping_file)
+    for search in config['searches']:
+        esi.create_index(search['name'], {'mappings': {'_doc': mapping}})
+        logging.info(f'Index created: {search["name"]}')
+        esi.create_index(f'{search["name"]}-finished', {})
+        logging.info(f'Index created: {search["name"]}-finished')
+
+
+@click.command(name='clean')
+@click.argument('index')
+def clean(index):
+    ElasticIndiceDriver(create_es_connection(
+        config['database']['host'],
+        config['database']['access_key'],
+        config['database']['secret_key'],
+        config['database']['region'])).clean_index(index)
+
+
 @click.group(invoke_without_command=True)
 @click.pass_context
 def cli(ctx):
@@ -101,3 +118,4 @@ def cli(ctx):
 cli.add_command(clean)
 cli.add_command(testDb)
 cli.add_command(start)
+cli.add_command(create_indexes)

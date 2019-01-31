@@ -22,7 +22,7 @@ class TwitterDriver:
 
         self.keywords = keywords
         self.log = logging
-        self.delay = 32
+        self.delay = 8
         self.db = db
 
     def get_user(self, user_id):
