@@ -10,6 +10,7 @@ class Crawler(Thread):
         self.es = elastic
         self.td = td
         self.name = name
+        self.logger = logging.getLogger(__name__)
 
     def crawl_search(self):
         random.shuffle(self.keywords)
@@ -24,10 +25,13 @@ class Crawler(Thread):
                 self.td.crawl_user(status.user.id)
 
     def get_candidate_tweets(self, keyword):
-        logging.info('getting candidate tweets for ' + keyword)
+        self.logger.info('getting candidate tweets for ' + keyword)
         search_res = self.td.search(keyword)
         return search_res
 
     def run(self):
         while True:
-            self.crawl_search()
+            try:
+                self.crawl_search()
+            except Exception as e:
+                self.logger.error(e)

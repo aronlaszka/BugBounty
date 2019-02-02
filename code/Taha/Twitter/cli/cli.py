@@ -1,5 +1,7 @@
 import json
 import logging
+import sys
+from logging.handlers import TimedRotatingFileHandler
 
 import click
 from elasticsearch import Elasticsearch, RequestsHttpConnection
@@ -12,19 +14,19 @@ from data.ElasticIndiceDriver import ElasticIndiceDriver
 
 # Configuring logger
 
-# logFormatter = logging.Formatter('%(asctime)s - %(threadName)s - %(name)s - %(levelname)s - %(message)s')
-# rootLogger = logging.getLogger()
+rootLogger = logging.getLogger()
 
-# fileHandler = TimedRotatingFileHandler('log.log', when='d', interval=1, backupCount=1)
-# fileHandler.setFormatter(logFormatter)
-# rootLogger.addHandler(fileHandler)
+logFormatter = logging.Formatter('%(asctime)s - %(threadName)s - %(name)s - %(levelname)s - %(message)s')
 
-# consoleHandler = logging.StreamHandler()
-# consoleHandler.setFormatter(logFormatter)
-# rootLogger.addHandler(consoleHandler)
+fileHandler = TimedRotatingFileHandler('log.log', when='d', interval=1, backupCount=1)
+fileHandler.setFormatter(logFormatter)
+rootLogger.addHandler(fileHandler)
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(threadName)s - %(name)s - %(levelname)s - %(message)s')
-logging.info('Logger initialized')
+consoleHandler = logging.StreamHandler(sys.stdout)
+consoleHandler.setFormatter(logFormatter)
+rootLogger.addHandler(consoleHandler)
+
+rootLogger.setLevel(logging.INFO)
 
 # Reading config file
 with open('config.json') as config_file:

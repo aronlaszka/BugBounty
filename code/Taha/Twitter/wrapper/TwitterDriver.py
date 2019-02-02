@@ -23,7 +23,7 @@ class TwitterDriver:
 
         self.keywords = keywords
         self.sensitivity = sensitivity
-        self.log = logging
+        self.log = logging.getLogger(__name__)
         self.delay = 8
         self.db = db
 
