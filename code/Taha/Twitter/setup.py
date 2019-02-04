@@ -12,6 +12,7 @@ setup(
         'neo4j-driver',
         'python-twitter',
         'requests-aws4auth',
+        'tweepy'
     ],
     dependency_links=[
         'git+https://github.com/bear/python-twitter#egg=python_twitter'

@@ -4,12 +4,14 @@ import sys
 from logging.handlers import TimedRotatingFileHandler
 
 import click
+import tweepy
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 
 from crawler.Crawler import Crawler
 from data.ElasticDriver import ElasticDriver
 from wrapper.TwitterDriver import TwitterDriver
+from wrapper.TweepyWrapper import TweepyWrapper
 from data.ElasticIndiceDriver import ElasticIndiceDriver
 
 # Configuring logger
@@ -18,7 +20,7 @@ rootLogger = logging.getLogger()
 
 logFormatter = logging.Formatter('%(asctime)s - %(threadName)s - %(name)s - %(levelname)s - %(message)s')
 
-fileHandler = TimedRotatingFileHandler('log.log', when='d', interval=1, backupCount=1)
+fileHandler = TimedRotatingFileHandler('logs/log.log', when='d', interval=1, backupCount=1)
 fileHandler.setFormatter(logFormatter)
 rootLogger.addHandler(fileHandler)
 
@@ -88,6 +90,39 @@ def start():
     for thread in threads:
         thread.join()
 
+@click.command(name='stream')
+def stream():
+    es = create_es_connection(
+        config['database']['host'],
+        config['database']['access_key'],
+        config['database']['secret_key'],
+        config['database']['region'])
+
+    for search in config['searches']:
+        ed = ElasticDriver(es, search['name'])
+        i = 1
+        for twitterAccount in search['twitterAccounts']:
+            td = TwitterDriver(
+                search['keywords'],
+                ed,
+                search['sensitivity'],
+                twitterAccount['consumer_key'],
+                twitterAccount['consumer_secret'],
+                twitterAccount['access_token_key'],
+                twitterAccount['access_token_secret']
+            )
+            streamer = TweepyWrapper(td)
+
+            auth = tweepy.OAuthHandler(twitterAccount['consumer_key'],
+                twitterAccount['consumer_secret'])
+            auth.set_access_token(twitterAccount['access_token_key'],
+                twitterAccount['access_token_secret'])
+
+            stream = tweepy.Stream(auth=auth, listener=streamer)
+            stream.filter(track=search['keywords'], is_async=True)
+            logging.info(f'Listener started for {search["name"]}...')
+            i += 1
+
 
 @click.command(name='create')
 def create_indexes():
@@ -149,3 +184,4 @@ cli.add_command(testDb)
 cli.add_command(start)
 cli.add_command(create_indexes)
 cli.add_command(reindex)
+cli.add_command(stream)
