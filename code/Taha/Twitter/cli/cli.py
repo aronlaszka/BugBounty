@@ -119,7 +119,7 @@ def stream():
                 twitterAccount['access_token_secret'])
 
             stream = tweepy.Stream(auth=auth, listener=streamer)
-            stream.filter(track=search['keywords'], is_async=True)
+            stream.filter(track=search['keywords'] + ['#' + k for k in search['keywords']], is_async=True)
             logging.info(f'Listener started for {search["name"]}...')
             i += 1
 
