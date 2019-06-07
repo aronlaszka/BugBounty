@@ -140,7 +140,7 @@ def create_indexes():
     with open('mapping.json') as mapping_file:
         mapping = json.load(mapping_file)
     for search in config['searches']:
-        esi.create_index(search['name'], {'mappings': {'_doc': mapping}})
+        esi.create_index(search['name'], {'mappings': mapping})
         logging.info(f'Index created: {search["name"]}')
         esi.create_index(f'{search["name"]}-finished', {})
         logging.info(f'Index created: {search["name"]}-finished')
