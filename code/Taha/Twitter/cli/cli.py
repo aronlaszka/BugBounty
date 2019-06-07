@@ -35,11 +35,11 @@ with open('config.json') as config_file:
     config = json.load(config_file)
 
 
-def create_es_connection(host, access_key, secret_key, region) -> Elasticsearch:
+def create_es_connection(host, port, access_key, secret_key, region) -> Elasticsearch:
     awsauth = AWS4Auth(access_key, secret_key, region, 'es')
 
     es = Elasticsearch(
-        hosts=[{'host': host, 'port': 443}],
+        hosts=[{'host': host, 'port': port}],
         http_auth=awsauth,
         use_ssl=True,
         verify_certs=True,
@@ -119,8 +119,9 @@ def stream():
                 twitterAccount['access_token_secret'])
 
             stream = tweepy.Stream(auth=auth, listener=streamer)
-            stream.filter(track=search['keywords'] + ['#' + k for k in search['keywords']], is_async=True)
-            logging.info(f'Listener started for {search["name"]}...')
+            keywords = search['keywords'] + ['#' + k for k in search['keywords']]
+            stream.filter(track=keywords, is_async=True)
+            logging.info(f'Listener started for {search["name"]}. Keywords: {keywords}')
             i += 1
 
 
@@ -159,6 +160,7 @@ def clean(index):
 def reindex(src, src_type, dst, dst_type):
     ElasticDriver(create_es_connection(
         config['database']['host'],
+        config['database']['port'],
         config['database']['access_key'],
         config['database']['secret_key'],
         config['database']['region']), None).reindex({
