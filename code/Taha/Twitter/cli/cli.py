@@ -40,10 +40,10 @@ def create_es_connection(host, port, access_key, secret_key, region) -> Elastics
 
     es = Elasticsearch(
         hosts=[{'host': host, 'port': port}],
-        http_auth=awsauth,
-        use_ssl=True,
-        verify_certs=True,
-        connection_class=RequestsHttpConnection
+        # http_auth=awsauth,
+        # use_ssl=True,
+        # verify_certs=True,
+        # connection_class=RequestsHttpConnection
     )
 
     logging.info(es.info())
