@@ -1,0 +1,49 @@
+{
+  "searches": [
+    {
+      "name": "bugbounty",
+      "keywords": [
+        "bugbounty",
+        "bugbountytip",
+        "togetherwehitharder",
+        "ittakesacrowd",
+        "hackerone",
+        "bugbounties",
+        "bugcrowd",
+        "bug bounty"
+      ],
+      "sensitivity": 0.01,
+      "twitterAccounts": [
+        {
+          "consumer_key": "lk34GEaQWaaXNk1jK7swHUBgH",
+          "consumer_secret": "1ItNrVbx9TFS6PGqajOYACSwWuRmZyTOeATImphQBsN3cYQIdv",
+          "access_token_key": "833314858586296322-32Vo3lUoIaknsK4SbEvNLLAedRRaEmt",
+          "access_token_secret": "yopvNdiUHZL83aO8KL9iRLd3VRHRjvVbnFYYbziwAC3FC"
+        }
+      ]
+    },
+    {
+      "name": "solidity",
+      "keywords": [
+        "smartcontract",
+        "smart contract",
+        "solidity"
+      ],
+      "sensitivity": 0.005,
+      "twitterAccounts": [
+        {
+          "consumer_key": "pTn8CmSu4DWds42sgriqMTh3D",
+          "consumer_secret": "PpDLb3oNdiL3WgjnFhgwryQXt4CkehTIJRsh04YRaxvmC6GI5z",
+          "access_token_key": "1051519670837288965-huNoFYASIRcqZltvR6SM38Tq8o7yRh",
+          "access_token_secret": "hiq6uVunvOuTbMFG4i7PgtG32SZTRPUMZxjGw7SIEDsHl"
+        }
+      ]
+    }
+  ],
+  "database": {
+    "host": "search-monkey-idbwylgf6tym5zwirphxyiivdi.us-east-2.es.amazonaws.com",
+    "access_key": "AKIAJD34WWRB563J6ZYQ",
+    "secret_key": "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",
+    "region": "us-east-2"
+  }
+}

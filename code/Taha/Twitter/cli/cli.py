@@ -56,6 +56,7 @@ def create_es_connection(host, port, access_key, secret_key, region) -> Elastics
 def testDb():
     create_es_connection(
         config['database']['host'],
+        config['database']['port'],
         config['database']['access_key'],
         config['database']['secret_key'],
         config['database']['region'])
@@ -65,6 +66,7 @@ def testDb():
 def start():
     es = create_es_connection(
         config['database']['host'],
+        config['database']['port'],
         config['database']['access_key'],
         config['database']['secret_key'],
         config['database']['region'])
@@ -94,6 +96,7 @@ def start():
 def stream():
     es = create_es_connection(
         config['database']['host'],
+        config['database']['port'],
         config['database']['access_key'],
         config['database']['secret_key'],
         config['database']['region'])
@@ -129,6 +132,7 @@ def stream():
 def create_indexes():
     es = create_es_connection(
         config['database']['host'],
+        config['database']['port'],
         config['database']['access_key'],
         config['database']['secret_key'],
         config['database']['region'])
@@ -147,6 +151,7 @@ def create_indexes():
 def clean(index):
     ElasticIndiceDriver(create_es_connection(
         config['database']['host'],
+        config['database']['port'],
         config['database']['access_key'],
         config['database']['secret_key'],
         config['database']['region'])).clean_index(index)
