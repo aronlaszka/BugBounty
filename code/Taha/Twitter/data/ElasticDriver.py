@@ -29,7 +29,7 @@ class ElasticDriver:
             self.es.index(index=f'{self.index}-finished', doc_type='_doc', body=json.dumps({'id': user}))
 
     def is_user_completed(self, user):
-        return self.es.search(index=f'{self.index}-finished', doc_type='_doc', q=f'id:{user}')['hits']['total'] > 0
+        return self.es.search(index=f'{self.index}-finished', doc_type='_doc', q=f'id:{user}')['hits']['total']['value'] > 0
 
     def reindex(self, body):
         self.es.reindex(json.dumps(body), wait_for_completion=False)
