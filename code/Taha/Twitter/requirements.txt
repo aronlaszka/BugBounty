@@ -25,5 +25,5 @@ scipy==1.1.0
 six==1.11.0
 sklearn==0.0
 tweepy==3.7.0
-urllib3==1.23
+urllib3==1.26.5
 yarl==1.2.6
